@@ -14,7 +14,12 @@ $$    $$/ $$    $$ |$$ |    $$       |  $$  $$/ $$ |      $$ |$$    $$/         
                                                               $$ |                                                           
                                                               $$/                                                            
                                                                                                                                                                               
-     
+ 
+Website: http://safetrip.app
+Twitter: https://twitter.com/SafeTripdefi
+Telegram: https://t.me/Safetrip_app
+Medium: https://safetripapp.medium.com
+    
 /**********************************************************************/
 
 
