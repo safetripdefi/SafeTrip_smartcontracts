@@ -14,12 +14,7 @@ $$    $$/ $$    $$ |$$ |    $$       |  $$  $$/ $$ |      $$ |$$    $$/         
                                                               $$ |                                                           
                                                               $$/                                                            
                                                                                                                                                                               
- 
-Website: http://ghostinthemachine.tech
-Twitter: https://twitter.com/GITM01100111
-Telegram: https://t.me/GhostInTheMachine01100111
-Medium: https://ghostinthemachine.medium.com
-    
+     
 /**********************************************************************/
 
 
