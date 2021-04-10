@@ -1713,6 +1713,8 @@ contract MasterChef is Ownable {
     event SetWithdrawFeeAddress(address indexed user, address indexed newAddress);
     event SetDevAddress(address indexed user, address indexed newAddress);
     event ChangetokensPerBlock(address indexed user, uint256 amount);
+    event ChangetransBurnRate(address indexed user, uint256 amount);
+    event ChangedecayBurnrate(address indexed user, uint256 amount);
     event Set(address indexed user, uint256 amount1, uint256 amount2, uint256 amount3);
     event Add(address indexed user, uint256 amount1, IBEP20 newAddress, uint256 amount2, uint256 amount3);
     event Burntoken(address indexed user,uint256 amount);
@@ -1968,6 +1970,20 @@ contract MasterChef is Ownable {
         massUpdatePools();
         tripPerBlock = _tripPerBlock;
         emit ChangetokensPerBlock(msg.sender, _tripPerBlock);
+    }
+
+    //
+    function changetransBurnRate(uint256 _transburnrate) public onlyOwner {
+        massUpdatePools();
+        trip.changetransBurnrate(_transburnrate);
+        emit ChangetransBurnRate(msg.sender, _transburnrate);
+    }
+
+    //
+    function changedecayBurnrate(uint256 _decayburnrate) public onlyOwner {
+        massUpdatePools();
+        trip.changedecayBurnrate(_decayburnrate);
+        emit ChangedecayBurnrate(msg.sender, _decayburnrate);
     }
 
     //burn tokens
