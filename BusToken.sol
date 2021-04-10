@@ -38,7 +38,7 @@ contract Context {
  * the owner.
  */
 contract Ownable is Context {
-    address private _owner;
+    address public _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -170,7 +170,11 @@ interface IBEP20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
@@ -557,6 +561,7 @@ library Address {
  */
 contract BEP20 is Context, IBEP20, Ownable {
     using SafeMath for uint256;
+    using Address for address;
 
     mapping(address => uint256) private _balances;
 
@@ -591,25 +596,24 @@ contract BEP20 is Context, IBEP20, Ownable {
     }
 
     /**
-     * @dev Returns the name of the token.
+     * @dev Returns the token name.
      */
     function name() public override view returns (string memory) {
         return _name;
     }
 
     /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
+     * @dev Returns the token decimals.
      */
-    function symbol() public override view returns (string memory) {
-        return _symbol;
+    function decimals() public override view returns (uint8) {
+        return _decimals;
     }
 
     /**
-    * @dev Returns the number of decimals used to get its user representation.
-    */
-    function decimals() public override view returns (uint8) {
-        return _decimals;
+     * @dev Returns the token symbol.
+     */
+    function symbol() public override view returns (string memory) {
+        return _symbol;
     }
 
     /**
@@ -670,7 +674,11 @@ contract BEP20 is Context, IBEP20, Ownable {
      * - the caller must have allowance for `sender`'s tokens of at least
      * `amount`.
      */
-    function transferFrom (address sender, address recipient, uint256 amount) public override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(
             sender,
@@ -712,7 +720,11 @@ contract BEP20 is Context, IBEP20, Ownable {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, 'BEP20: decreased allowance below zero'));
+        _approve(
+            _msgSender(),
+            spender,
+            _allowances[_msgSender()][spender].sub(subtractedValue, 'BEP20: decreased allowance below zero')
+        );
         return true;
     }
 
@@ -743,7 +755,11 @@ contract BEP20 is Context, IBEP20, Ownable {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer (address sender, address recipient, uint256 amount) internal {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal {
         require(sender != address(0), 'BEP20: transfer from the zero address');
         require(recipient != address(0), 'BEP20: transfer to the zero address');
 
@@ -801,7 +817,11 @@ contract BEP20 is Context, IBEP20, Ownable {
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
-    function _approve (address owner, address spender, uint256 amount) internal {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal {
         require(owner != address(0), 'BEP20: approve from the zero address');
         require(spender != address(0), 'BEP20: approve to the zero address');
 
@@ -817,7 +837,11 @@ contract BEP20 is Context, IBEP20, Ownable {
      */
     function _burnFrom(address account, uint256 amount) internal {
         _burn(account, amount);
-        _approve(account, _msgSender(), _allowances[account][_msgSender()].sub(amount, 'BEP20: burn amount exceeds allowance'));
+        _approve(
+            account,
+            _msgSender(),
+            _allowances[account][_msgSender()].sub(amount, 'BEP20: burn amount exceeds allowance')
+        );
     }
 }
 
@@ -826,13 +850,17 @@ interface Callable {
     function receiveApproval(address _from, uint256 _tokens, address _token, bytes calldata _data) external;
 }
 
-contract SafetripToken is Context, IBEP20, Ownable {
+abstract contract SafetripToken is Context, IBEP20, Ownable {
     using SafeMath for uint256;
     using Address for address;
     
     event LogBurn(uint256 decayrate, uint256 totalSupply);
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
+    
+    mapping(address => uint256) private _balanceOf;
+    mapping (address => mapping (address => uint256)) private _allowance;
+
 
     modifier validRecipient(address to) {
         require(to != address(0x0));
@@ -841,12 +869,12 @@ contract SafetripToken is Context, IBEP20, Ownable {
     }
 
     string public constant _name = "Safetrip Token";
-    string public constant _symbol = "$TRIP";
+    string public constant _symbol = "TRIP";
     uint8 public _decimals = 18;
     
     uint256 private constant DECIMALS = 18;
     uint256 private constant MAX_UINT256 = ~uint256(0); //(2^256) - 1
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 20202 * 10**DECIMALS;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 10000 * 10**DECIMALS;
     uint256 private constant TOTAL_GONS = MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
     
     uint256 private _totalSupply;
@@ -854,18 +882,24 @@ contract SafetripToken is Context, IBEP20, Ownable {
     mapping(address => uint256) private _gonBalances;
     mapping (address => mapping (address => uint256)) private _allowedFragments;
    
-    uint256 public decayBurnrate = 500; //initial DBR 5%
+    uint256 public decayBurnrate = 300; //initial DBR 3%
     
     uint256 public maxdecayBurnrate = 500; // max DBR 5%
-    uint256 public mindecayBurnrate = 100; // min DBR 1%
-
-    uint256 public transBurnrate = 500;//initial TBR 5%
+    uint256 public mindecayBurnrate = 0; // min DBR 0%
+    
+    uint256 public transBurnrate = 300;//initial TBR 3%
 
     uint256 public maxtransBurnrate = 500; // max TBR 5%
-    uint256 public mintransBurnrate = 100; // min TBR 1%
-    
-    uint256 private constant max_supply = 3000000 * 10**DECIMALS;
+    uint256 public mintransBurnrate = 0; // min TBR 0%
+
+    uint256 private constant max_supply = 12000000 * 10**DECIMALS;
     bool public maxSupplyHit = false;
+    
+    // BurnAddress
+    address public constant burnaddress = 0x000000000000000000000000000000000000dEaD;
+    
+    // Timer variables for globalDecay
+    uint256 public timestart = 0;
     
     // @notice A record of each accounts delegate
     mapping (address => address) internal _delegates;
@@ -901,29 +935,30 @@ contract SafetripToken is Context, IBEP20, Ownable {
     
     function globalDecay() public onlyOwner returns (uint256)
     {
+        uint256 timeinterval = now.sub(timestart);
+        require(timeinterval > 28800, "timelimit-10mins is not finished yet");
+        
         uint256 _remainrate = 10000; //0.25%->decayrate=25
         _remainrate = _remainrate.sub(decayBurnrate);
-
-        _totalSupply = _totalSupply.mul(_remainrate);
-        _totalSupply = _totalSupply.sub(_totalSupply.mod(10000));
-        _totalSupply = _totalSupply.div(10000);
+        
+        _totalSupply = _totalSupply.mul(_remainrate).div(10000);
 
         _gonsPerFragment = TOTAL_GONS.div(_totalSupply);
+        
+        timestart = now;
 
         emit LogBurn(decayBurnrate, _totalSupply);
         return _totalSupply;
     }
     
-    function burn(address account, uint256 amount) public onlyOwner {
-        require(account != address(0), "burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
+    function burn(uint256 amount) public onlyOwner {
+        _beforeTokenTransfer(burnaddress, address(0), amount);
         
         uint256 gonValue = amount.mul(_gonsPerFragment);
-        _gonBalances[account] = _gonBalances[account].sub(gonValue, "burn amount exceeds balance");
+        _gonBalances[burnaddress] = _gonBalances[burnaddress].sub(gonValue, "burn amount exceeds balance");
         
         _totalSupply = _totalSupply.sub(amount, "burn amount exceeds balance");
-        emit Transfer(account, address(0), amount);
+        emit Transfer(burnaddress, address(0), amount);
     }
     
     function name() public pure returns (string memory) {
@@ -949,23 +984,20 @@ contract SafetripToken is Context, IBEP20, Ownable {
     
     function transfer(address to, uint256 value) public validRecipient(to) virtual override returns (bool)
     {
-        require(_balanceOf[msg.sender] >= value);
+        uint256 decayvalue = value.mul(transBurnrate).div(10000);
         
-        uint256 remainrate = 10000; 
-        remainrate = remainrate.sub(transBurnrate); //99.97%->99.97/10000
-        uint256 leftvalue = value.mul(remainrate);
-        leftvalue = leftvalue.sub(leftvalue.mod(10000));
-        leftvalue = leftvalue.div(10000);
-
-        _balanceOf[msg.sender] -= value;  // deduct from sender's balance
-        _balanceOf[to] += leftvalue;          // add to recipient's balance
+        uint256 leftValue = value.sub(decayvalue);
         
-        uint256 decayvalue = value.sub(leftvalue); //3%->3/100->value-leftvalue
+        uint256 gonValue = value.mul(_gonsPerFragment);
+        uint256 leftgonValue = value.sub(decayvalue);
+        leftgonValue = leftgonValue.mul(_gonsPerFragment);
+        _gonBalances[msg.sender] = _gonBalances[msg.sender].sub(gonValue);
+        _gonBalances[to] = _gonBalances[to].add(leftgonValue);
+        
         _totalSupply = _totalSupply.sub(decayvalue);
         
         emit Transfer(msg.sender, address(0x0), decayvalue);
-        emit Transfer(msg.sender, to, leftvalue);
-        
+        emit Transfer(msg.sender, to, leftValue);
         return true;
     }
     
@@ -983,24 +1015,24 @@ contract SafetripToken is Context, IBEP20, Ownable {
     
     function transferFrom(address from, address to, uint256 value) public validRecipient(to) virtual override returns (bool)
     {
-        require(value <= _balanceOf[from]);
-        require(value <= _allowance[from][msg.sender]);
+        _allowedFragments[from][msg.sender] = _allowedFragments[from][msg.sender].sub(value);
         
-        uint256 remainrate = 10000; 
-        remainrate = remainrate.sub(transBurnrate); //99.97%->99.97/10000
-        uint256 leftvalue = value.mul(remainrate);
-        leftvalue = leftvalue.sub(leftvalue.mod(10000));
-        leftvalue = leftvalue.div(10000);
-
-        _balanceOf[from] -= value;
-        _balanceOf[to] += leftvalue;
-        _allowance[from][msg.sender] -= value;
+        uint256 decayvalue = value.mul(transBurnrate).div(10000);
         
-        uint256 decayvalue = value.sub(leftvalue); //0.03%->3/10000->value-leftvalue
+        uint256 leftValue = value.sub(decayvalue);
+        
+        uint256 gonValue = value.mul(_gonsPerFragment);
+        uint256 leftgonValue = value.sub(decayvalue);
+        leftgonValue = leftgonValue.mul(_gonsPerFragment);
+        
         _totalSupply = _totalSupply.sub(decayvalue);
         
+        _gonBalances[from] = _gonBalances[from].sub(gonValue);
+        _gonBalances[to] = _gonBalances[to].add(leftgonValue);
+        
         emit Transfer(from, address(0x0), decayvalue);
-        emit Transfer(from, to, leftvalue);
+        emit Transfer(from, to, leftValue);
+
         return true;
     }
     
@@ -1031,7 +1063,7 @@ contract SafetripToken is Context, IBEP20, Ownable {
         decayBurnrate = _newdecayBurnrate;
         return true;
     }
-
+    
     function changetransBurnrate(uint256 _newtransBurnrate) public onlyOwner returns (bool) {
         require(_newtransBurnrate <= maxtransBurnrate, "too high value");
         require(_newtransBurnrate >= mintransBurnrate, "too low value");
@@ -1053,7 +1085,7 @@ contract SafetripToken is Context, IBEP20, Ownable {
         uint256 gonValue = amount.mul(_gonsPerFragment);
 
         _totalSupply = _totalSupply.add(amount);
-        _gonBalances[account] = _gonBalances[account].add(gonValue);
+        _gonBalances[account] += gonValue;
         emit Transfer(address(0), account, amount);
         
         _moveDelegates(address(0), _delegates[account], amount);
@@ -1149,9 +1181,9 @@ contract SafetripToken is Context, IBEP20, Ownable {
         );
 
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "$TRIP::delegateBySig: invalid signature");
-        require(nonce == nonces[signatory]++, "$TRIP::delegateBySig: invalid nonce");
-        require(now <= expiry, "$TRIP::delegateBySig: signature expired");
+        require(signatory != address(0), "TRIP::delegateBySig: invalid signature");
+        require(nonce == nonces[signatory]++, "TRIP::delegateBySig: invalid nonce");
+        require(now <= expiry, "TRIP::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
 
@@ -1173,7 +1205,7 @@ contract SafetripToken is Context, IBEP20, Ownable {
      * @return The number of votes the account had as of the given block
      */
     function getPriorVotes(address account, uint blockNumber) external view returns (uint256) {
-        require(blockNumber < block.number, "$TRIP::getPriorVotes: not yet determined");
+        require(blockNumber < block.number, "TRIP::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -1208,7 +1240,7 @@ contract SafetripToken is Context, IBEP20, Ownable {
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
-        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying $TRIPs (not scaled);
+        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying TRIPs (not scaled);
         _delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -1237,7 +1269,7 @@ contract SafetripToken is Context, IBEP20, Ownable {
     }
 
     function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint256 oldVotes, uint256 newVotes)  internal  {
-        uint32 blockNumber = safe32(block.number, "$TRIP::_writeCheckpoint: block number exceeds 32 bits");
+        uint32 blockNumber = safe32(block.number, "TRIP::_writeCheckpoint: block number exceeds 32 bits");
 
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
             checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
@@ -1262,7 +1294,7 @@ contract SafetripToken is Context, IBEP20, Ownable {
 }
 
 // BusToken with Governance.
-contract BusToken is BEP20('Bus Token', '$BUS') {
+contract BusToken is BEP20('Bus Token', 'BUS') {
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (MasterChef).
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
